@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Security Intelligence | Detect Famine Before It Strikes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* DESIGN TOKENS */
+        :root {
+            --primary: #10b981;
+            --primary-hover: #059669;
+            --bg-dark: #0f172a;
+            --surface: #1e293b;
+            --text-main: #f1f5f9;
+            --text-muted: #cbd5e1;
+            --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.3);
+            --radius-lg: 16px;
+            --radius-md: 8px;
+        }
+
+        /* BASE STYLES */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* NAVIGATION */
+        nav {
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 100;
+            padding: 1.5rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-icon {
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-main);
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: #000;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        /* HERO SECTION */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 0 5%;
+            padding-top: 5rem;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 70%);
+        }
+
+        .tagline {
+            color: var(--primary);
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
+            animation: fadeUp 1s ease 0.2s forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 5vw, 4.5rem);
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -2px;
+            max-width: 900px;
+            margin-bottom: 1.5rem;
+            animation: fadeUp 1s ease 0.4s forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .hero p {
+            font-size: clamp(1.1rem, 2vw, 1.25rem);
+            color: var(--text-muted);
+            max-width: 650px;
+            margin-bottom: 2.5rem;
+            animation: fadeUp 1s ease 0.6s forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+            animation: fadeUp 1s ease 0.8s forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .btn-secondary {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.9rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* STATS SECTION */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            padding: 6rem 5%;
+            background: #0b1120;
+        }
+
+        .stat-card {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.85rem;
+        }
+
+        /* FEATURES SECTION */
+        .features {
+            padding: 8rem 5%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            letter-spacing: -1px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: var(--surface);
+            padding: 2.5rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+
+        .feature-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* API PREVIEW SECTION */
+        .api-preview {
+            background: #0b1120;
+            padding: 8rem 5%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .code-window {
+            background: #1e293b;
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 800px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            margin-top: 3rem;
+        }
+
+        .code-header {
+            background: #0f172a;
+            padding: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dot.red {
+            background: #ff5f56;
+        }
+
+        .dot.yellow {
+            background: #ffbd2e;
+        }
+
+        .dot.green {
+            background: #27c93f;
+        }
+
+        .code-body {
+            padding: 2rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            color: #a5b4fc;
+            overflow-x: auto;
+            line-height: 1.5;
+        }
+
+        .code-string {
+            color: #10b981;
+        }
+
+        .code-key {
+            color: #f472b6;
+        }
+
+        .code-number {
+            color: #fbbf24;
+        }
+
+        /* FOOTER */
+        footer {
+            padding: 4rem 5%;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* ANIMATIONS */
+        @keyframes fadeUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero {
+                padding-top: 8rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>
+        <div class="logo">
+            <span class="logo-icon">🌾</span> FamineSystem
+        </div>
+        <ul class="nav-links">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#api">API</a></li>
+            <li><a href="DESIGN_SYSTEM.md">Design System</a></li>
+        </ul>
+        <a href="frontend/dashboard.html" class="btn-primary">Launch Dashboard</a>
+    </nav>
+
+    <section class="hero">
+        <div class="tagline">Real-time Agricultural AI</div>
+        <h1>Detect Famine Before It Strikes</h1>
+        <p>Advanced machine learning models computing climate anomaly, NDVI crop health, and socioeconomic stress to
+            proactively predict food insecurity crises worldwide.</p>
+        <div class="hero-actions">
+            <a href="frontend/dashboard.html" class="btn-primary">Analyze Location</a>
+            <a href="README.md" class="btn-secondary">View Documentation</a>
+        </div>
+    </section>
+
+    <section class="stats">
+        <div class="stat-card reveal">
+            <div class="stat-number">45<span style="font-size: 2rem;">+</span></div>
+            <div class="stat-label">Variables Analyzed</div>
+        </div>
+        <div class="stat-card reveal" style="transition-delay: 0.1s;">
+            <div class="stat-number" style="color: #f59e0b;">5</div>
+            <div class="stat-label">Model Pipelines</div>
+        </div>
+        <div class="stat-card reveal" style="transition-delay: 0.2s;">
+            <div class="stat-number" style="color: #a5b4fc;">Live</div>
+            <div class="stat-label">Global Monitoring</div>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <div class="section-header reveal">
+            <h2>Intelligent Assessment Engine</h2>
+            <p style="color: var(--text-muted);">Combining vast datasets into actionable insights for humanitarian
+                action.</p>
+        </div>
+        <div class="feature-grid">
+            <div class="feature-card reveal">
+                <div class="feature-icon">🌦️</div>
+                <h3>Environmental Stress</h3>
+                <p>Incorporates localized historical dataset ingestion mapping exact rainfall deviation and heat anomaly
+                    patterns over critical growing seasons.</p>
+            </div>
+            <div class="feature-card reveal" style="transition-delay: 0.1s;">
+                <div class="feature-icon">🛰️</div>
+                <h3>Satellite NDVI Indexing</h3>
+                <p>Calculates vegetation health indices utilizing crop yield matrices scaling real-world productivity to
+                    detect active physiological stress.</p>
+            </div>
+            <div class="feature-card reveal" style="transition-delay: 0.2s;">
+                <div class="feature-icon">📊</div>
+                <h3>Socioeconomic Vulnerability</h3>
+                <p>Projects human impact by weighing poverty indices, localized density metrics, and food price
+                    volatility to estimate coping capacities.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="api" class="api-preview">
+        <div class="section-header reveal">
+            <h2>Built for Developers. Deployed for Impact.</h2>
+            <p style="color: var(--text-muted);">Access complete predictive models with a single REST request.</p>
+        </div>
+        <div class="code-window reveal">
+            <div class="code-header">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
+            </div>
+            <div class="code-body">
+                > POST /api/assess-risk<br>
+                > Content-Type: application/json<br><br>
+                {<br>
+                &nbsp;&nbsp;<span class="code-key">"latitude"</span>: <span class="code-number">12.9716</span>,<br>
+                &nbsp;&nbsp;<span class="code-key">"longitude"</span>: <span class="code-number">77.5946</span>,<br>
+                &nbsp;&nbsp;<span class="code-key">"district"</span>: <span class="code-string">"New Delhi"</span><br>
+                }<br><br>
+                <span style="color: #64748b;">// Response HTTP 200 OK</span><br>
+                {<br>
+                &nbsp;&nbsp;<span class="code-key">"risk_level"</span>: <span class="code-string">"Red"</span>,<br>
+                &nbsp;&nbsp;<span class="code-key">"overall_score"</span>: <span class="code-number">0.86</span>,<br>
+                &nbsp;&nbsp;<span class="code-key">"factors"</span>: { ... }<br>
+                }
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 Food Security Intelligence System. Designed for impact.</p>
+    </footer>
+
+    <script>
+        // Scroll Reveal Animation Script
+        const revealElements = document.querySelectorAll('.reveal');
+
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        });
+
+        revealElements.forEach(el => revealObserver.observe(el));
+    </script>
+</body>
+
+</html>

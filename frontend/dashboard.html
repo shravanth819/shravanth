@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Security Intelligence System</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --text-color: #f8fafc;
+            --border-color: #334155;
+            --green: #22c55e;
+            --yellow: #eab308;
+            --orange: #f97316;
+            --red: #ef4444;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            width: 100%;
+            background-color: var(--panel-bg);
+            padding: 20px 0;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2rem;
+            color: var(--green);
+        }
+
+        p.subtitle {
+            margin: 8px 0 0 0;
+            color: #94a3b8;
+        }
+
+        main {
+            width: 90%;
+            max-width: 1200px;
+            margin-top: 40px;
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .panel {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .panel h2 {
+            margin-top: 0;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+            font-size: 1.25rem;
+            color: #cbd5e1;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #94a3b8;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: white;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button:disabled {
+            background-color: var(--border-color);
+            cursor: not-allowed;
+        }
+
+        #results {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .risk-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 9999px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .scores-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .score-card {
+            background-color: var(--bg-color);
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .score-card .value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 8px 0;
+            color: #e2e8f0;
+        }
+
+        .score-card .label {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        ul.reasons {
+            padding-left: 20px;
+            color: #cbd5e1;
+        }
+
+        ul.reasons li {
+            margin-bottom: 8px;
+        }
+
+        .error {
+            color: var(--red);
+            font-weight: bold;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>🌾 Food Security Intelligence System</h1>
+        <p class="subtitle">Real-time Regional Early Famine Risk Detection</p>
+    </header>
+
+    <main>
+        <!-- Input Form -->
+        <section class="panel">
+            <h2>Assess Location</h2>
+            <form id="assessForm">
+                <div class="form-group">
+                    <label for="latitude">Latitude (North is +, South is -)</label>
+                    <input type="number" id="latitude" step="any" placeholder="e.g. 12.9716 (for 12.97° N)" required>
+                </div>
+                <div class="form-group">
+                    <label for="longitude">Longitude (East is +, West is -)</label>
+                    <input type="number" id="longitude" step="any" placeholder="e.g. 77.5946 (for 77.59° E)" required>
+                </div>
+                <div class="form-group">
+                    <label for="district">District / Region Name (Optional)</label>
+                    <input type="text" id="district" placeholder="e.g. New Delhi">
+                </div>
+                <button type="submit" id="submitBtn">Analyze Risk</button>
+                <div id="errorMsg" class="error"></div>
+            </form>
+            <div id="loader" class="loader">Analyzing satellite and climate data...</div>
+        </section>
+
+        <!-- Results Dashboard -->
+        <section class="panel" id="results">
+            <h2>Assessment Results</h2>
+            <div id="riskBadge" class="risk-badge">Calculating...</div>
+
+            <div class="scores-grid">
+                <div class="score-card">
+                    <div class="label">Overall Score</div>
+                    <div class="value" id="overallScore">-</div>
+                </div>
+                <div class="score-card">
+                    <div class="label">Confidence</div>
+                    <div class="value" id="confidenceVal">-</div>
+                </div>
+            </div>
+
+            <div class="scores-grid">
+                <div class="score-card">
+                    <div class="label">Climate Stress</div>
+                    <div class="value" id="envStress">-</div>
+                </div>
+                <div class="score-card">
+                    <div class="label">Crop Health</div>
+                    <div class="value" id="cropStress">-</div>
+                </div>
+                <div class="score-card">
+                    <div class="label">Social Vuln.</div>
+                    <div class="value" id="socioStress">-</div>
+                </div>
+            </div>
+
+            <h3>Key Explanations</h3>
+            <ul class="reasons" id="explanationsList">
+            </ul>
+
+            <h3>Recommended Interventions</h3>
+            <ul class="reasons" id="interventionsList">
+            </ul>
+        </section>
+    </main>
+
+    <script>
+        document.getElementById('assessForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const loader = document.getElementById('loader');
+            const resultsDiv = document.getElementById('results');
+            const errorMsg = document.getElementById('errorMsg');
+
+            btn.disabled = true;
+            loader.style.display = 'block';
+            resultsDiv.style.display = 'none';
+            errorMsg.style.display = 'none';
+
+            const payload = {
+                latitude: parseFloat(document.getElementById('latitude').value),
+                longitude: parseFloat(document.getElementById('longitude').value),
+                district: document.getElementById('district').value || "Unknown",
+                region_name: document.getElementById('district').value || "Unknown"
+            };
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/assess-risk', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(await response.text());
+                }
+
+                const data = await response.json();
+                displayResults(data);
+            } catch (err) {
+                errorMsg.textContent = "Error: " + err.message;
+                errorMsg.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                loader.style.display = 'none';
+            }
+        });
+
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.style.display = 'block';
+
+            const ra = data.risk_assessment;
+            const badge = document.getElementById('riskBadge');
+            badge.textContent = ra.risk_level + " RISK";
+            badge.style.backgroundColor = ra.risk_color;
+            badge.style.color = (ra.risk_level === 'yellow' || ra.risk_level === 'green') ? '#0f172a' : '#fff';
+
+            document.getElementById('overallScore').textContent = ra.risk_score.toFixed(2);
+            document.getElementById('confidenceVal').textContent = (ra.confidence * 100).toFixed(0) + '%';
+
+            const cs = data.component_scores;
+            document.getElementById('envStress').textContent = cs.environmental_stress_index.toFixed(2);
+            document.getElementById('cropStress').textContent = cs.crop_health_stress_index.toFixed(2);
+            document.getElementById('socioStress').textContent = cs.socioeconomic_vulnerability_index.toFixed(2);
+
+            const exList = document.getElementById('explanationsList');
+            exList.innerHTML = '';
+            data.explanations.forEach(e => {
+                const li = document.createElement('li');
+                li.textContent = e;
+                exList.appendChild(li);
+            });
+
+            const inList = document.getElementById('interventionsList');
+            inList.innerHTML = '';
+            data.recommended_interventions.forEach(i => {
+                const li = document.createElement('li');
+                li.textContent = i;
+                inList.appendChild(li);
+            });
+        }
+    </script>
+</body>
+
+</html>
