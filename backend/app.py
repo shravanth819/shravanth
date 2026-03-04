@@ -16,9 +16,9 @@ from utils.validators import validate_coordinates, sanitize_input, validate_batc
 load_dotenv()
 
 app = Flask(__name__, 
-            static_folder='../frontend',
+            static_folder='frontend',
             static_url_path='/static',
-            template_folder='../frontend')
+            template_folder='frontend')
 CORS(app)
 
 @app.route('/api/health', methods=['GET'])
@@ -34,7 +34,7 @@ def index():
     """Serve the main landing page"""
     try:
         # Try to serve LANDING_PAGE.html if it exists
-        with open(os.path.join(os.path.dirname(__file__), '..', 'frontend', 'LANDING_PAGE.html'), 'r', encoding='utf-8') as f:
+        with open(os.path.join(os.path.dirname(__file__), 'frontend', 'LANDING_PAGE.html'), 'r', encoding='utf-8') as f:
             html_content = f.read()
         return html_content, 200, {'Content-Type': 'text/html; charset=utf-8'}
     except FileNotFoundError:
@@ -44,7 +44,7 @@ def index():
 def dashboard():
     """Serve the interactive dashboard"""
     try:
-        with open(os.path.join(os.path.dirname(__file__), '..', 'frontend', 'dashboard.html'), 'r', encoding='utf-8') as f:
+        with open(os.path.join(os.path.dirname(__file__), 'frontend', 'dashboard.html'), 'r', encoding='utf-8') as f:
             html_content = f.read()
         return html_content, 200, {'Content-Type': 'text/html; charset=utf-8'}
     except FileNotFoundError:
