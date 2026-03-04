@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dhanyanetra - Agricultural Intelligence Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border: rgba(148, 163, 184, 0.1);
+            --danger: #dc2626;
+            --warning: #f59e0b;
+            --success: #10b981;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--background);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* =====================================================================
+           NAVIGATION
+           ===================================================================== */
+
+        nav {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .nav-auth {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-nav {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-login {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+
+        .btn-login:hover {
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .btn-signup {
+            background: var(--primary);
+            color: var(--background);
+        }
+
+        .btn-signup:hover {
+            background: var(--primary-dark);
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 70px;
+            right: 40px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            min-width: 200px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            z-index: 200;
+        }
+
+        .dropdown-menu.active {
+            display: block;
+        }
+
+        .dropdown-menu a, .dropdown-menu button {
+            display: block;
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            background: none;
+            color: var(--text-secondary);
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .dropdown-menu a:hover, .dropdown-menu button:hover {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--primary);
+        }
+
+        /* =====================================================================
+           MAIN CONTAINER
+           ===================================================================== */
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* =====================================================================
+           PAGES (Hidden by default)
+           ===================================================================== */
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* =====================================================================
+           LOGIN / SIGNUP FORMS
+           ===================================================================== */
+
+        .auth-container {
+            max-width: 450px;
+            margin: 60px auto;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .auth-title {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        .auth-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 14px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 12px 24px;
+            background: var(--primary);
+            color: var(--background);
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 10px;
+        }
+
+        .btn-submit:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .auth-switch a {
+            color: var(--primary);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .auth-switch a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background: rgba(220, 38, 38, 0.1);
+            color: #fca5a5;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--danger);
+            font-size: 14px;
+        }
+
+        .success-message {
+            background: rgba(16, 185, 129, 0.1);
+            color: #86efac;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--success);
+            font-size: 14px;
+        }
+
+        /* =====================================================================
+           DASHBOARD
+           ===================================================================== */
+
+        .dashboard-header {
+            margin-bottom: 40px;
+        }
+
+        .dashboard-title {
+            font-size: 32px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .dashboard-subtitle {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 8px 16px rgba(16, 185, 129, 0.1);
+        }
+
+        .card-title {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .card-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .card-description {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .card-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-green {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .status-yellow {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .status-red {
+            background: rgba(220, 38, 38, 0.2);
+            color: var(--danger);
+        }
+
+        /* =====================================================================
+           RESPONSIVE
+           ===================================================================== */
+
+        @media (max-width: 768px) {
+            nav {
+                padding: 0 20px;
+            }
+
+            .nav-links {
+                gap: 15px;
+                font-size: 12px;
+            }
+
+            .auth-container {
+                padding: 30px 20px;
+                margin: 40px 20px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            nav {
+                height: auto;
+                flex-direction: column;
+                padding: 10px;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .dropdown-menu {
+                right: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <a href="#" class="logo" onclick="showPage('home')">🌾 Dhanyanetra</a>
+        
+        <ul class="nav-links" id="navLinks">
+            <li><a href="#" onclick="showPage('home')">Home</a></li>
+            <li><a href="#" onclick="showPage('about')">About</a></li>
+            <li><a href="#" onclick="showPage('contact')">Contact</a></li>
+        </ul>
+
+        <div class="nav-auth" id="navAuth">
+            <button class="btn-nav btn-login" onclick="showPage('login')">Login</button>
+            <button class="btn-nav btn-signup" onclick="showPage('signup')">Sign Up</button>
+        </div>
+
+        <div class="user-menu" id="userMenu" style="display: none;">
+            <span id="userName" style="font-size: 14px;"></span>
+            <div class="user-avatar" onclick="toggleDropdown()">
+                <span id="userInitial">U</span>
+            </div>
+            <div class="dropdown-menu" id="dropdownMenu">
+                <a href="#" onclick="showPage('dashboard')">Dashboard</a>
+                <a href="#" onclick="showPage('profile')">Profile</a>
+                <button onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- HOME PAGE -->
+        <div class="page active" id="homePage">
+            <div style="text-align: center; padding: 100px 0;">
+                <h1 style="font-size: 48px; margin-bottom: 20px;">🌾 Dhanyanetra</h1>
+                <p style="font-size: 18px; color: var(--text-secondary); margin-bottom: 40px;">
+                    AI-Powered Agricultural Intelligence Platform<br>
+                    Early Famine Risk Detection & Crop Health Monitoring
+                </p>
+                <button class="btn-submit" style="max-width: 250px; margin: 0 auto; display: block;" 
+                        onclick="showPage('signup')">Get Started Today</button>
+            </div>
+        </div>
+
+        <!-- LOGIN PAGE -->
+        <div class="page" id="loginPage">
+            <div class="auth-container">
+                <h2 class="auth-title">Welcome Back</h2>
+                <p class="auth-subtitle">Sign in to your account</p>
+
+                <div id="loginError"></div>
+
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label>Username or Email</label>
+                        <input type="text" id="loginUsername" placeholder="your@email.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="loginPassword" placeholder="••••••••" required>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Sign In</button>
+                </form>
+
+                <div class="auth-switch">
+                    Don't have an account? <a onclick="showPage('signup')">Sign up</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- SIGNUP PAGE -->
+        <div class="page" id="signupPage">
+            <div class="auth-container">
+                <h2 class="auth-title">Create Account</h2>
+                <p class="auth-subtitle">Join our agricultural community</p>
+
+                <div id="signupError"></div>
+
+                <form onsubmit="handleSignup(event)">
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="signupUsername" placeholder="farmer_john" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="signupEmail" placeholder="john@example.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="signupPassword" placeholder="Min 8 chars, uppercase, digit, special" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>User Type</label>
+                        <select id="signupRole" required>
+                            <option value="farmer">Farmer</option>
+                            <option value="researcher">Researcher</option>
+                            <option value="officer">Government Officer</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Location (Optional)</label>
+                        <input type="text" id="signupLocation" placeholder="e.g., Bangalore, Karnataka">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Crop Type (Optional)</label>
+                        <input type="text" id="signupCrop" placeholder="e.g., Rice">
+                    </div>
+
+                    <button type="submit" class="btn-submit">Create Account</button>
+                </form>
+
+                <div class="auth-switch">
+                    Already have an account? <a onclick="showPage('login')">Sign in</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- DASHBOARD PAGE -->
+        <div class="page" id="dashboardPage">
+            <div class="dashboard-header">
+                <h1 class="dashboard-title">Welcome, <span id="dashboardName">User</span>!</h1>
+                <p class="dashboard-subtitle">Your agricultural intelligence dashboard</p>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="card">
+                    <div class="card-title">Current Risk Level</div>
+                    <div class="card-value" id="riskLevel">--</div>
+                    <div class="card-description">
+                        <span class="card-status status-green">Monitoring</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Crop Health Index</div>
+                    <div class="card-value" id="cropHealth">--</div>
+                    <div class="card-description">Vegetation stress assessment</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Rainfall Trend</div>
+                    <div class="card-value" id="rainfall">--</div>
+                    <div class="card-description">vs. Historical average</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 20px; font-size: 18px;">Analyze a Region</h3>
+                <form onsubmit="handleRiskAssessment(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Latitude</label>
+                            <input type="number" id="assessLat" placeholder="e.g., 12.9716" step="0.0001" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Longitude</label>
+                            <input type="number" id="assessLon" placeholder="e.g., 77.5946" step="0.0001" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>District</label>
+                        <input type="text" id="assessDistrict" placeholder="e.g., Bangalore" required>
+                    </div>
+                    <button type="submit" class="btn-submit">Assess Risk</button>
+                </form>
+                <div id="assessmentResult" style="margin-top: 20px;"></div>
+            </div>
+        </div>
+
+        <!-- PROFILE PAGE -->
+        <div class="page" id="profilePage">
+            <div class="auth-container">
+                <h2 class="auth-title">Your Profile</h2>
+
+                <div id="profileInfo"></div>
+
+                <div style="margin-top: 40px; padding-top: 30px; border-top: 1px solid var(--border);">
+                    <h3 style="margin-bottom: 20px; font-size: 18px;">Change Password</h3>
+                    <form onsubmit="handleChangePassword(event)">
+                        <div class="form-group">
+                            <label>Current Password</label>
+                            <input type="password" id="oldPassword" required>
+                        </div>
+                        <div class="form-group">
+                            <label>New Password</label>
+                            <input type="password" id="newPassword" required>
+                        </div>
+                        <button type="submit" class="btn-submit">Change Password</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABOUT PAGE -->
+        <div class="page" id="aboutPage">
+            <div style="max-width: 800px; margin: 0 auto;">
+                <h1 style="font-size: 32px; margin-bottom: 20px;">About Dhanyanetra</h1>
+                <p style="margin-bottom: 20px; line-height: 1.8;">
+                    Dhanyanetra is an AI-powered agricultural intelligence platform designed to detect 
+                    famine risk early and help farmers, researchers, and government agencies make 
+                    data-driven decisions.
+                </p>
+                <p style="color: var(--text-secondary);">
+                    Using real-time climate data, satellite imagery, and socio-economic analysis, 
+                    we provide early warnings to prevent crop failures and food crises.
+                </p>
+            </div>
+        </div>
+
+        <!-- CONTACT PAGE -->
+        <div class="page" id="contactPage">
+            <div style="max-width: 600px; margin: 0 auto;">
+                <h1 style="font-size: 32px; margin-bottom: 20px;">Contact Us</h1>
+                <p style="color: var(--text-secondary); margin-bottom: 30px;">
+                    Have questions? We'd love to hear from you.
+                </p>
+                <form>
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" placeholder="Your name">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" placeholder="your@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Message</label>
+                        <textarea placeholder="Your message" rows="5"></textarea>
+                    </div>
+                    <button type="submit" class="btn-submit">Send Message</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://krishidrishti.onrender.com/api'; // Change to your API URL
+
+        // Show/hide pages
+        function showPage(pageName) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageName + 'Page')?.classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        // Toggle user dropdown
+        function toggleDropdown() {
+            document.getElementById('dropdownMenu').classList.toggle('active');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.user-menu')) {
+                document.getElementById('dropdownMenu').classList.remove('active');
+            }
+        });
+
+        // Check if user is logged in
+        function checkAuth() {
+            const token = localStorage.getItem('authToken');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+            if (token && user.username) {
+                document.getElementById('navAuth').style.display = 'none';
+                document.getElementById('userMenu').style.display = 'flex';
+                document.getElementById('userName').textContent = user.username;
+                document.getElementById('userInitial').textContent = user.username[0].toUpperCase();
+                showPage('dashboard');
+                loadDashboard();
+            } else {
+                showPage('home');
+            }
+        }
+
+        // Handle signup
+        async function handleSignup(event) {
+            event.preventDefault();
+            const errorDiv = document.getElementById('signupError');
+            errorDiv.innerHTML = '';
+
+            const data = {
+                username: document.getElementById('signupUsername').value,
+                email: document.getElementById('signupEmail').value,
+                password: document.getElementById('signupPassword').value,
+                role: document.getElementById('signupRole').value,
+                location: document.getElementById('signupLocation').value,
+                crop_type: document.getElementById('signupCrop').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('authToken', result.token);
+                    localStorage.setItem('user', JSON.stringify(result.user));
+                    checkAuth();
+                } else {
+                    errorDiv.innerHTML = `<div class="error-message">${result.error}</div>`;
+                }
+            } catch (error) {
+                errorDiv.innerHTML = `<div class="error-message">Signup failed. Please try again.</div>`;
+            }
+        }
+
+        // Handle login
+        async function handleLogin(event) {
+            event.preventDefault();
+            const errorDiv = document.getElementById('loginError');
+            errorDiv.innerHTML = '';
+
+            const data = {
+                username: document.getElementById('loginUsername').value,
+                password: document.getElementById('loginPassword').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('authToken', result.token);
+                    localStorage.setItem('user', JSON.stringify(result.user));
+                    checkAuth();
+                } else {
+                    errorDiv.innerHTML = `<div class="error-message">${result.error}</div>`;
+                }
+            } catch (error) {
+                errorDiv.innerHTML = `<div class="error-message">Login failed. Please try again.</div>`;
+            }
+        }
+
+        // Handle logout
+        function logout() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('user');
+            checkAuth();
+        }
+
+        // Load dashboard
+        function loadDashboard() {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            document.getElementById('dashboardName').textContent = user.username || 'User';
+        }
+
+        // Handle risk assessment
+        async function handleRiskAssessment(event) {
+            event.preventDefault();
+            const resultDiv = document.getElementById('assessmentResult');
+            const token = localStorage.getItem('authToken');
+
+            const data = {
+                latitude: parseFloat(document.getElementById('assessLat').value),
+                longitude: parseFloat(document.getElementById('assessLon').value),
+                district: document.getElementById('assessDistrict').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/assess-risk`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success-message">
+                            <strong>Assessment Complete</strong><br>
+                            Risk Level: <strong>${result.risk_assessment.risk_level.toUpperCase()}</strong><br>
+                            Risk Score: <strong>${result.risk_assessment.risk_score.toFixed(2)}</strong>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error-message">${result.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error-message">Assessment failed. Please try again.</div>`;
+            }
+        }
+
+        // Handle change password
+        async function handleChangePassword(event) {
+            event.preventDefault();
+            const token = localStorage.getItem('authToken');
+
+            const data = {
+                old_password: document.getElementById('oldPassword').value,
+                new_password: document.getElementById('newPassword').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/change-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('Password changed successfully!');
+                    event.target.reset();
+                } else {
+                    alert(`Error: ${result.error}`);
+                }
+            } catch (error) {
+                alert('Failed to change password');
+            }
+        }
+
+        // Initialize on page load
+        checkAuth();
+    </script>
+</body>
+</html>

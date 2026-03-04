@@ -36,14 +36,14 @@ def health_check():
 
 @app.route('/', methods=['GET'])
 def index():
-    """Serve the main landing page"""
+    """Serve the complete frontend application"""
     try:
-        # Try to serve LANDING_PAGE.html if it exists
-        with open(os.path.join(os.path.dirname(__file__), 'frontend', 'LANDING_PAGE.html'), 'r', encoding='utf-8') as f:
+        # Try to serve APP.html if it exists
+        with open(os.path.join(os.path.dirname(__file__), 'frontend', 'APP.html'), 'r', encoding='utf-8') as f:
             html_content = f.read()
         return html_content, 200, {'Content-Type': 'text/html; charset=utf-8'}
     except FileNotFoundError:
-        return "Landing page not found", 404
+        return "App not found", 404
 
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
@@ -104,6 +104,7 @@ def process_single_region(data: dict) -> dict:
 
 
 @app.route('/api/assess-risk', methods=['POST'])
+@login_required
 def assess_risk():
     data = request.get_json()
     if not data or 'latitude' not in data or 'longitude' not in data:
@@ -117,6 +118,7 @@ def assess_risk():
     return jsonify(result)
 
 @app.route('/api/batch-assess', methods=['POST'])
+@login_required
 def batch_assess():
     data = request.get_json()
     if not data or 'regions' not in data:
