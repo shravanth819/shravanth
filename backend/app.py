@@ -15,7 +15,10 @@ from utils.validators import validate_coordinates, sanitize_input, validate_batc
 
 load_dotenv()
 
-app = Flask(__name__)
+app = Flask(__name__, 
+            static_folder='../frontend',
+            static_url_path='/static',
+            template_folder='../frontend')
 CORS(app)
 
 @app.route('/api/health', methods=['GET'])
@@ -25,6 +28,27 @@ def health_check():
         "timestamp": datetime.utcnow().isoformat(),
         "version": "1.0.0"
     })
+
+@app.route('/', methods=['GET'])
+def index():
+    """Serve the main landing page"""
+    try:
+        # Try to serve LANDING_PAGE.html if it exists
+        with open(os.path.join(os.path.dirname(__file__), '..', 'frontend', 'LANDING_PAGE.html'), 'r', encoding='utf-8') as f:
+            html_content = f.read()
+        return html_content, 200, {'Content-Type': 'text/html; charset=utf-8'}
+    except FileNotFoundError:
+        return "Landing page not found", 404
+
+@app.route('/dashboard', methods=['GET'])
+def dashboard():
+    """Serve the interactive dashboard"""
+    try:
+        with open(os.path.join(os.path.dirname(__file__), '..', 'frontend', 'dashboard.html'), 'r', encoding='utf-8') as f:
+            html_content = f.read()
+        return html_content, 200, {'Content-Type': 'text/html; charset=utf-8'}
+    except FileNotFoundError:
+        return jsonify({'error': 'Dashboard not found'}), 404
 
 def process_single_region(data: dict) -> dict:
     """Helper to process a single region assessment."""

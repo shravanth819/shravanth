@@ -299,7 +299,7 @@
             };
 
             try {
-                const response = await fetch('http://127.0.0.1:5000/api/assess-risk', {
+                const response = await fetch('/api/assess-risk', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
