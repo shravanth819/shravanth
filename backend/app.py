@@ -13,6 +13,9 @@ from models.socioeconomic_analyzer import analyze_vulnerability
 from utils.data_fetcher import fetch_climate_data, fetch_ndvi_data, get_demo_socioeconomic_data
 from utils.validators import validate_coordinates, sanitize_input, validate_batch_request
 
+from models.user_auth import auth, user_db, login_required, admin_required
+from routes.auth_routes import setup_auth_routes
+
 load_dotenv()
 
 app = Flask(__name__, 
@@ -20,6 +23,8 @@ app = Flask(__name__,
             static_url_path='/static',
             template_folder='frontend')
 CORS(app)
+
+setup_auth_routes(app, auth, user_db, login_required, admin_required)
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
