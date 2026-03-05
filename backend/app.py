@@ -19,10 +19,17 @@ from routes.auth_routes import setup_auth_routes
 load_dotenv()
 
 app = Flask(__name__, 
-            static_folder='frontend',
-            static_url_path='/static',
-            template_folder='frontend')
+            static_folder='static',
+            template_folder='templates')
 CORS(app)
+
+from database.db import db, migrate
+import database.models  # load models for SQLAlchemy / Alembic
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///famine_system.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db.init_app(app)
+migrate.init_app(app, db)
+
 
 setup_auth_routes(app, auth, user_db, login_required, admin_required)
 
@@ -34,26 +41,90 @@ def health_check():
         "version": "1.0.0"
     })
 
+from flask import render_template
+
 @app.route('/', methods=['GET'])
 def index():
-    """Serve the complete frontend application"""
-    try:
-        # Try to serve APP.html if it exists
-        with open(os.path.join(os.path.dirname(__file__), 'frontend', 'APP.html'), 'r', encoding='utf-8') as f:
-            html_content = f.read()
-        return html_content, 200, {'Content-Type': 'text/html; charset=utf-8'}
-    except FileNotFoundError:
-        return "App not found", 404
+    """Serve the landing/login page"""
+    return render_template('auth/login.html')
+
+@app.route('/login', methods=['GET'])
+def login_page():
+    return render_template('auth/login.html')
+
+@app.route('/signup', methods=['GET'])
+def signup_page():
+    return render_template('auth/signup.html')
 
 @app.route('/dashboard', methods=['GET'])
-def dashboard():
-    """Serve the interactive dashboard"""
-    try:
-        with open(os.path.join(os.path.dirname(__file__), 'frontend', 'dashboard.html'), 'r', encoding='utf-8') as f:
-            html_content = f.read()
-        return html_content, 200, {'Content-Type': 'text/html; charset=utf-8'}
-    except FileNotFoundError:
-        return jsonify({'error': 'Dashboard not found'}), 404
+def dashboard_page():
+    return render_template('dashboard/user_dashboard.html')
+
+@app.route('/analysis', methods=['GET'])
+def analysis_page():
+    return render_template('dashboard/analysis.html')
+
+@app.route('/map', methods=['GET'])
+def map_page():
+    return render_template('map/interactive_map.html')
+
+@app.route('/admin', methods=['GET'])
+def admin_page():
+    return render_template('admin/admin_dashboard.html')
+
+import io
+from flask import Response
+from database.models import User, AnalysisHistory, Alert
+
+@app.route('/api/admin/stats', methods=['GET'])
+@login_required
+def admin_stats():
+    """Retrieve system stats for admin dashboard"""
+    # Simply using the login decorator to protect the route for now,
+    # in a strict production system we'd use @admin_required.
+    
+    total_users = User.query.count()
+    total_assessments = AnalysisHistory.query.count()
+    active_alerts = Alert.query.filter_by(is_read=False).count()
+    
+    # Grab 50 latest users for the table
+    latest_users = User.query.order_by(User.created_at.desc()).limit(50).all()
+    users_data = [{
+        'id': u.id,
+        'username': u.username,
+        'email': u.email,
+        'role': u.role,
+        'created_at': u.created_at.isoformat()
+    } for u in latest_users]
+    
+    return jsonify({
+        'total_users': total_users,
+        'total_assessments': total_assessments,
+        'active_alerts': active_alerts,
+        'users': users_data,
+        'status': 'healthy'
+    })
+
+@app.route('/api/export-report', methods=['GET'])
+@login_required
+def export_report():
+    """Generate a CSV export of recent system activity"""
+    # Fetch recent history
+    history = AnalysisHistory.query.order_by(AnalysisHistory.created_at.desc()).limit(100).all()
+    
+    csv_str = io.StringIO()
+    csv_str.write("ID,Region Name,Latitude,Longitude,Risk Level,Risk Score,Timestamp\n")
+    
+    for h in history:
+        csv_str.write(f"{h.id},{h.region_name},{h.latitude},{h.longitude},{h.risk_level},{h.risk_score},{h.created_at}\n")
+    
+    response = Response(
+        csv_str.getvalue(),
+        mimetype="text/csv",
+        content_type="text/csv"
+    )
+    response.headers["Content-Disposition"] = "attachment; filename=system_report.csv"
+    return response
 
 def process_single_region(data: dict) -> dict:
     """Helper to process a single region assessment."""

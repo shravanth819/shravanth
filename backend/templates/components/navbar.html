@@ -1,0 +1,137 @@
+<style>
+    nav {
+        background: rgba(15, 23, 42, 0.95);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--border);
+        padding: 0 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 70px;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .logo {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--primary);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .nav-links {
+        display: flex;
+        gap: 30px;
+        list-style: none;
+    }
+
+    .nav-links a {
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        transition: color 0.3s ease;
+    }
+
+    .nav-links a:hover {
+        color: var(--primary);
+    }
+
+    .nav-auth {
+        display: flex;
+        gap: 15px;
+    }
+
+    .btn-nav {
+        padding: 8px 16px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-login {
+        background: transparent;
+        color: var(--primary);
+        border: 2px solid var(--primary);
+    }
+
+    .btn-login:hover {
+        background: rgba(16, 185, 129, 0.1);
+    }
+
+    .btn-signup {
+        background: var(--primary);
+        color: var(--background);
+    }
+
+    .btn-signup:hover {
+        background: var(--primary-dark);
+    }
+</style>
+
+<nav>
+    <a href="/" class="logo">🌾 Dhanyanetra</a>
+    <ul class="nav-links">
+        <li><a href="/">Home</a></li>
+        <li class="auth-required" style="display:none;"><a href="/dashboard">Dashboard</a></li>
+        <li class="auth-required" style="display:none;"><a href="/map">Interactive Map</a></li>
+        <li class="auth-required" style="display:none;"><a href="/analysis">Regional Analysis</a></li>
+    </ul>
+
+    <div class="nav-auth" id="navAuth">
+        <button class="btn-nav btn-login" onclick="window.location.href='/login'">Login</button>
+        <button class="btn-nav btn-signup" onclick="window.location.href='/signup'">Sign Up</button>
+    </div>
+
+    <!-- Authenticated Menu -->
+    <div class="user-menu" id="userMenu" style="display: none; align-items: center; gap: 15px;">
+        <span id="userName" style="font-size: 14px; color: var(--text-secondary);"></span>
+        <div class="user-avatar" onclick="toggleDropdown()"
+            style="width: 36px; height: 36px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; cursor: pointer; color: black; position: relative;">
+            <span id="userInitial">U</span>
+            <div class="dropdown-menu" id="dropdownMenu"
+                style="display: none; position: absolute; top: 45px; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; min-width: 150px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 200;">
+                <a href="#" onclick="logout()"
+                    style="display: block; width: 100%; padding: 12px 16px; border: none; background: none; color: var(--danger); text-align: left; cursor: pointer; text-decoration: none;">Logout</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<script>
+    function toggleDropdown() {
+        const dd = document.getElementById('dropdownMenu');
+        dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function logout() {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+    }
+
+    // Toggle logic
+    document.addEventListener('DOMContentLoaded', () => {
+        const token = localStorage.getItem('authToken');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        if (token && user.username) {
+            document.getElementById('navAuth').style.display = 'none';
+            document.getElementById('userMenu').style.display = 'flex';
+            document.getElementById('userName').textContent = user.username;
+            document.getElementById('userInitial').textContent = user.username[0].toUpperCase();
+
+            // Show auth links
+            document.querySelectorAll('.auth-required').forEach(el => el.style.display = 'block');
+        }
+    });
+</script>

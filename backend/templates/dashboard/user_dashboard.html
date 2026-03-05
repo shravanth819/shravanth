@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .dashboard-header {
+        margin-bottom: 40px;
+    }
+
+    .dashboard-title {
+        font-size: 32px;
+        margin-bottom: 10px;
+        font-weight: 700;
+    }
+
+    .dashboard-subtitle {
+        color: var(--text-secondary);
+        font-size: 16px;
+    }
+
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 24px;
+        margin-bottom: 40px;
+    }
+
+    .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 24px;
+        transition: all 0.3s ease;
+    }
+
+    .card:hover {
+        border-color: var(--primary);
+        box-shadow: 0 8px 16px rgba(16, 185, 129, 0.1);
+    }
+
+    .card-title {
+        font-size: 14px;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        font-weight: 600;
+    }
+
+    .card-value {
+        font-size: 36px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+
+    .card-description {
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+
+    .card-status {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .status-green {
+        background: rgba(16, 185, 129, 0.2);
+        color: var(--success);
+    }
+
+    .status-yellow {
+        background: rgba(245, 158, 11, 0.2);
+        color: var(--warning);
+    }
+
+    .status-red {
+        background: rgba(220, 38, 38, 0.2);
+        color: var(--danger);
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--text-secondary);
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+    input,
+    select,
+    textarea {
+        width: 100%;
+        padding: 12px 14px;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1 class="dashboard-title">Welcome, <span id="dashboardName">User</span>!</h1>
+    <p class="dashboard-subtitle">Your agricultural intelligence dashboard</p>
+</div>
+
+<div class="dashboard-grid">
+    <div class="card">
+        <div class="card-title">Current Risk Level</div>
+        <div class="card-value" id="riskLevel">--</div>
+        <div class="card-description">
+            <span class="card-status status-green">Monitoring</span>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-title">Crop Health Index</div>
+        <div class="card-value" id="cropHealth">--</div>
+        <div class="card-description">Vegetation stress assessment</div>
+    </div>
+    <div class="card">
+        <div class="card-title">Rainfall Trend</div>
+        <div class="card-value" id="rainfall">--</div>
+        <div class="card-description">vs. Historical average</div>
+    </div>
+</div>
+
+<div class="dashboard-grid" style="grid-template-columns: 2fr 1fr;">
+    <div class="card">
+        <h3 style="margin-bottom: 20px; font-size: 16px;">Historical Risk Trend Visualization</h3>
+        <canvas id="riskTrendChart" height="100"></canvas>
+    </div>
+    <div class="card">
+        <h3 style="margin-bottom: 20px; font-size: 16px;">System Alerts</h3>
+        <div id="alertBox">
+            <p style="color: var(--text-secondary); font-size: 14px;">No active alerts at the moment. System operations
+                are normal.</p>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3 style="margin-bottom: 20px; font-size: 18px;">Analyze a Region</h3>
+    <form onsubmit="handleRiskAssessment(event)">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Latitude</label>
+                <input type="number" id="assessLat" placeholder="e.g., 12.9716" step="0.0001" required>
+            </div>
+            <div class="form-group">
+                <label>Longitude</label>
+                <input type="number" id="assessLon" placeholder="e.g., 77.5946" step="0.0001" required>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>District</label>
+            <input type="text" id="assessDistrict" placeholder="e.g., Bangalore" required>
+        </div>
+        <button type="submit" class="btn-submit">Assess Risk</button>
+    </form>
+    <div id="assessmentResult" style="margin-top: 20px;"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Initialize Chart.js
+    let riskChart;
+    function initChart() {
+        const ctx = document.getElementById('riskTrendChart').getContext('2d');
+        Chart.defaults.color = '#cbd5e1';
+        Chart.defaults.borderColor = 'rgba(148, 163, 184, 0.1)';
+        riskChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Simulated Risk Score',
+                    data: [35, 42, 38, 55, 62, 45],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { min: 0, max: 100 }
+                }
+            }
+        });
+    }
+
+    // Load user info
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (user.username) {
+            document.getElementById('dashboardName').textContent = user.username;
+        } else {
+            window.location.href = '/login';
+        }
+    });
+
+    async function handleRiskAssessment(event) {
+        event.preventDefault();
+        const data = {
+            latitude: parseFloat(document.getElementById('assessLat').value),
+            longitude: parseFloat(document.getElementById('assessLon').value),
+            region: document.getElementById('assessDistrict').value
+        };
+
+        const token = localStorage.getItem('authToken');
+
+        try {
+            document.getElementById('assessmentResult').innerHTML = 'Analyzing region data...';
+            const response = await fetch(`${API_BASE}/assess-risk`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                document.getElementById('riskLevel').textContent = result.risk_level.toUpperCase();
+                document.getElementById('cropHealth').textContent = result.components.environmental_stress.toFixed(2);
+                document.getElementById('rainfall').textContent = 'Normal';
+
+                let colorClass = 'status-green';
+                if (result.risk_level === 'medium') colorClass = 'status-yellow';
+                if (result.risk_level === 'high' || result.risk_level === 'extreme') colorClass = 'status-red';
+
+                document.getElementById('assessmentResult').innerHTML = `
+<div style="padding: 15px; border: 1px solid var(--border); border-radius: 8px; margin-top: 15px;">
+    <h4>Analysis Complete - Score: ${result.risk_score.toFixed(2)}</h4>
+    <p>Confidence: ${(result.confidence_score * 100).toFixed(1)}%</p>
+</div>
+`;
+            } else {
+                document.getElementById('assessmentResult').innerHTML = '<div class="error-message">' + (result.error || 'API Error') + '</div>';
+            }
+        } catch (error) {
+            console.error(error);
+            document.getElementById('assessmentResult').innerHTML = '<div class="error-message">Failed to connect to AI engine.</div>';
+        }
+    }
+</script>
+{% endblock %}

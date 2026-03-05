@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<style>
+    .map-container {
+        height: 600px;
+        width: 100%;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 1;
+        /* relative to standard context */
+    }
+
+    .map-sidebar {
+        background: var(--surface);
+        padding: 24px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+    }
+
+    .map-layout {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 24px;
+        margin-top: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--text-secondary);
+        font-size: 14px;
+    }
+
+    input {
+        width: 100%;
+        padding: 10px;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: white;
+    }
+
+    @media (max-width: 768px) {
+        .map-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1 class="dashboard-title">Interactive Risk Map</h1>
+    <p class="dashboard-subtitle">Click anywhere on the map to analyze that specific region</p>
+</div>
+
+<div class="map-layout">
+    <div id="riskMap" class="map-container"></div>
+
+    <div class="map-sidebar">
+        <h3 style="margin-bottom: 20px;">Selected Coordinates</h3>
+        <form id="mapAnalysisForm" onsubmit="analyzeFromMap(event)">
+            <div class="form-group">
+                <label>Latitude</label>
+                <input type="number" id="mapLat" step="0.000001" readonly required>
+            </div>
+            <div class="form-group">
+                <label>Longitude</label>
+                <input type="number" id="mapLon" step="0.000001" readonly required>
+            </div>
+            <div class="form-group">
+                <label>District/Region Name</label>
+                <input type="text" id="mapRegion" placeholder="Name this region..." required>
+            </div>
+            <button type="submit" class="btn-submit" id="analyzeBtn" disabled>Run Deep Analysis</button>
+        </form>
+
+        <div id="mapResult" style="margin-top: 24px;"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+    // Initialize map centered on India/South Asia by default
+    const map = L.map('riskMap').setView([20.5937, 78.9629], 5);
+
+    // Add dark theme tile layer (CartoDB Dark Matter is great for data visualization)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
+    }).addTo(map);
+
+    let currentMarker = null;
+
+    // Handle Map Clicks
+    map.on('click', function (e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+
+        // Update input fields
+        document.getElementById('mapLat').value = lat.toFixed(6);
+        document.getElementById('mapLon').value = lng.toFixed(6);
+        document.getElementById('analyzeBtn').disabled = false;
+
+        // Manage Marker
+        if (currentMarker) {
+            map.removeLayer(currentMarker);
+        }
+        currentMarker = L.marker([lat, lng]).addTo(map);
+
+        // Reverse Geocoding (Optional, simple fallback to Lat/Lng text)
+        document.getElementById('mapRegion').value = `Region (${lat.toFixed(2)}, ${lng.toFixed(2)})`;
+    });
+
+    // Handle form submission to assessment API
+    async function analyzeFromMap(e) {
+        e.preventDefault();
+
+        const data = {
+            latitude: parseFloat(document.getElementById('mapLat').value),
+            longitude: parseFloat(document.getElementById('mapLon').value),
+            region: document.getElementById('mapRegion').value
+        };
+
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
+
+        const resDiv = document.getElementById('mapResult');
+        resDiv.innerHTML = '<p style="color: var(--primary);">Running ML Models...</p>';
+
+        try {
+            const response = await fetch('/api/assess-risk', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                let color = 'var(--success)';
+                if (result.risk_level === 'medium') color = 'var(--warning)';
+                if (result.risk_level === 'high' || result.risk_level === 'extreme') color = 'var(--danger)';
+
+                // Color the marker
+                currentMarker.bindPopup(`<b>Risk: ${result.risk_level.toUpperCase()}</b><br>Score: ${result.risk_score.toFixed(2)}`).openPopup();
+
+                resDiv.innerHTML = `
+                    <div style="padding: 15px; border: 1px solid ${color}; border-radius: 8px; background: rgba(15, 23, 42, 0.5);">
+                        <h4 style="color: ${color}; margin-bottom: 10px;">Risk Level: ${result.risk_level.toUpperCase()}</h4>
+                        <p><strong>Score:</strong> ${result.risk_score.toFixed(2)} / 100</p>
+                        <p><strong>Env Stress:</strong> ${(result.components.environmental_stress * 100).toFixed(1)}%</p>
+                        <p><strong>Socioecon Vuln:</strong> ${(result.components.socioeconomic_vulnerability * 100).toFixed(1)}%</p>
+                        <button class="btn-submit" style="margin-top: 15px; padding: 8px;" onclick="window.location.href='/analysis?lat=${data.latitude}&lon=${data.longitude}&region=${encodeURIComponent(data.region)}'">View Detailed Report</button>
+                    </div>
+                `;
+            } else {
+                resDiv.innerHTML = `<p style="color: var(--danger);">${result.error}</p>`;
+            }
+        } catch (err) {
+            resDiv.innerHTML = '<p style="color: var(--danger);">Network Error</p>';
+        }
+    }
+</script>
+{% endblock %}

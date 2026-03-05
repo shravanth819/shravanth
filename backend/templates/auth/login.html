@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .auth-container {
+        max-width: 450px;
+        margin: 60px auto;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 40px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .auth-title {
+        font-size: 28px;
+        margin-bottom: 10px;
+        color: var(--text-primary);
+        font-weight: 700;
+    }
+
+    .auth-subtitle {
+        color: var(--text-secondary);
+        margin-bottom: 30px;
+        font-size: 14px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--text-secondary);
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+    input,
+    select,
+    textarea {
+        width: 100%;
+        padding: 12px 14px;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+
+    .auth-switch {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+
+    .auth-switch a {
+        color: var(--primary);
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .auth-switch a:hover {
+        text-decoration: underline;
+    }
+
+    .error-message {
+        background: rgba(220, 38, 38, 0.1);
+        color: #fca5a5;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border-left: 4px solid var(--danger);
+        font-size: 14px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <h2 class="auth-title">Welcome Back</h2>
+    <p class="auth-subtitle">Sign in to your account</p>
+
+    <div id="loginError"></div>
+
+    <form onsubmit="handleLogin(event)">
+        <div class="form-group">
+            <label>Username or Email</label>
+            <input type="text" id="loginUsername" placeholder="your@email.com" required>
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="loginPassword" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn-submit">Sign In</button>
+    </form>
+
+    <div class="auth-switch">
+        Don't have an account? <a href="/signup">Sign up</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+async function handleLogin(event) {
+event.preventDefault();
+const errorDiv = document.getElementById('loginError');
+errorDiv.innerHTML = '';
+const data = {
+username: document.getElementById('loginUsername').value,
+password: document.getElementById('loginPassword').value
+};
+try {
+const response = await fetch(`${API_BASE}/auth/login`, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify(data)
+});
+const result = await response.json();
+if (response.ok) {
+localStorage.setItem('authToken', result.token);
+localStorage.setItem('user', JSON.stringify(result.user));
+window.location.href = '/dashboard';
+} else {
+errorDiv.innerHTML = `<div class="error-message">${result.error}</div>`;
+}
+} catch (error) {
+errorDiv.innerHTML = `<div class="error-message">Login failed. Please try again.</div>`;
+}
+}
+{% endblock %}

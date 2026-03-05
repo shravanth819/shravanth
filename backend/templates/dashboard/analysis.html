@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .analysis-header {
+        margin-bottom: 30px;
+    }
+
+    .analysis-title {
+        font-size: 32px;
+        font-weight: 700;
+    }
+
+    .analysis-subtitle {
+        color: var(--text-secondary);
+    }
+
+    .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--text-secondary);
+        font-size: 14px;
+    }
+
+    input {
+        width: 100%;
+        padding: 12px;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: white;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+        display: none;
+    }
+
+    .metric-card {
+        padding: 15px;
+        border-radius: 8px;
+        background: rgba(15, 23, 42, 0.5);
+        border: 1px solid var(--border);
+    }
+
+    .metric-title {
+        font-size: 12px;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+    }
+
+    .metric-value {
+        font-size: 24px;
+        font-weight: bold;
+        margin: 8px 0;
+        color: var(--primary);
+    }
+
+    .confidence-bar {
+        height: 8px;
+        background: var(--border);
+        border-radius: 4px;
+        margin-top: 10px;
+        overflow: hidden;
+    }
+
+    .confidence-fill {
+        height: 100%;
+        background: var(--primary);
+        width: 0%;
+        transition: width 1s ease;
+    }
+
+    .risk-extreme {
+        color: var(--danger);
+    }
+
+    .risk-high {
+        color: var(--danger);
+    }
+
+    .risk-medium {
+        color: var(--warning);
+    }
+
+    .risk-low {
+        color: var(--success);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="analysis-header">
+    <h1 class="analysis-title">Deep Regional Analysis</h1>
+    <p class="analysis-subtitle">Extract granular climate and socioeconomic intelligence</p>
+</div>
+
+<div class="panel">
+    <form id="analysisForm" onsubmit="runDeepAnalysis(event)">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Latitude</label>
+                <input type="number" id="aLat" step="0.000001" required>
+            </div>
+            <div class="form-group">
+                <label>Longitude</label>
+                <input type="number" id="aLon" step="0.000001" required>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Region/District Name</label>
+                <input type="text" id="aRegion" required>
+            </div>
+            <div class="form-group">
+                <label>Target Crop Type</label>
+                <input type="text" id="aCrop" placeholder="e.g., Rice, Wheat">
+            </div>
+        </div>
+        <button type="submit" class="btn-submit" id="submitBtn">Generate Intelligence Report</button>
+    </form>
+</div>
+
+<div class="panel" id="resultsPanel" style="display: none;">
+    <h2 id="reportTitle" style="margin-bottom: 20px;">Analysis Results</h2>
+
+    <div
+        style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
+        <div>
+            <h3 style="font-size: 14px; color: var(--text-secondary); text-transform: uppercase;">Overall Risk Level
+            </h3>
+            <h1 id="overallRisk" style="font-size: 48px;">--</h1>
+        </div>
+        <div style="text-align: right;">
+            <h3 style="font-size: 14px; color: var(--text-secondary); text-transform: uppercase;">Confidence Score</h3>
+            <h2 id="confidenceText" style="font-size: 24px;">--%</h2>
+            <div class="confidence-bar" style="width: 200px;">
+                <div id="confidenceFill" class="confidence-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <h3 style="margin-top: 20px; font-size: 16px;">Environmental Metrics</h3>
+    <div class="metrics-grid" id="envMetrics" style="display: grid;">
+        <div class="metric-card">
+            <div class="metric-title">Temperature (Currently)</div>
+            <div class="metric-value" id="valTemp">-- °C</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Rainfall (Past 30 Days)</div>
+            <div class="metric-value" id="valRain">-- mm</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">NDVI Index</div>
+            <div class="metric-value" id="valNdvi">--</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Soil Moisture Proxy</div>
+            <div class="metric-value" id="valSoil">--</div>
+        </div>
+    </div>
+
+    <h3 style="margin-top: 30px; font-size: 16px;">Socioeconomic Summary</h3>
+    <div class="metrics-grid" id="socioMetrics" style="display: grid;">
+        <div class="metric-card">
+            <div class="metric-title">Vulnerability Score</div>
+            <div class="metric-value" id="valVuln">--</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Primary Livelihood</div>
+            <div class="metric-value" id="valLivelihood">Agriculture</div>
+        </div>
+    </div>
+
+    <div
+        style="margin-top: 30px; padding: 20px; background: rgba(245, 158, 11, 0.1); border-left: 4px solid var(--warning); border-radius: 4px;">
+        <h4 style="color: var(--warning); margin-bottom: 10px;">System Recommendations</h4>
+        <ul id="recommendationsList" style="margin-left: 20px; color: var(--text-secondary); line-height: 1.8;">
+            <li>Loading...</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Pre-fill from URL parameters (if clicked from Map)
+    window.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('lat')) document.getElementById('aLat').value = urlParams.get('lat');
+        if (urlParams.get('lon')) document.getElementById('aLon').value = urlParams.get('lon');
+        if (urlParams.get('region')) document.getElementById('aRegion').value = urlParams.get('region');
+
+        // Auto-run if accessed from Map
+        if (urlParams.get('lat') && urlParams.get('lon')) {
+            document.getElementById('analysisForm').dispatchEvent(new Event('submit'));
+        }
+    });
+
+    async function runDeepAnalysis(e) {
+        e.preventDefault();
+
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
+
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.textContent = 'Crunching ML Data...';
+        submitBtn.disabled = true;
+
+        const data = {
+            latitude: parseFloat(document.getElementById('aLat').value),
+            longitude: parseFloat(document.getElementById('aLon').value),
+            region: document.getElementById('aRegion').value
+        };
+
+        try {
+            const response = await fetch('/api/assess-risk', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            document.getElementById('resultsPanel').style.display = 'block';
+
+            if (response.ok) {
+                // Formatting risk display
+                const riskEl = document.getElementById('overallRisk');
+                riskEl.textContent = result.risk_level.toUpperCase();
+                riskEl.className = `risk-${result.risk_level}`;
+
+                // Formatting confidence
+                const conf = (result.confidence_score * 100).toFixed(1);
+                document.getElementById('confidenceText').textContent = `${conf}%`;
+                document.getElementById('confidenceFill').style.width = `${conf}%`;
+
+                // Environmental metrics (if raw data returned by backend)
+                document.getElementById('valTemp').textContent = result.raw_data ? result.raw_data.climate.temperature + ' °C' : 'Analytic Proxy';
+                document.getElementById('valRain').textContent = result.raw_data ? result.raw_data.climate.rainfall + ' mm' : 'Analytic Proxy';
+                document.getElementById('valNdvi').textContent = result.raw_data ? result.raw_data.ndvi.value.toFixed(2) : 'Proxy Data';
+                document.getElementById('valSoil').textContent = (1 - result.components.environmental_stress).toFixed(2);
+
+                // Socioeconomic
+                document.getElementById('valVuln').textContent = (result.components.socioeconomic_vulnerability * 100).toFixed(1) + '%';
+
+                // Recommendations
+                const recsList = document.getElementById('recommendationsList');
+                recsList.innerHTML = '';
+                if (result.recommendations && result.recommendations.length > 0) {
+                    result.recommendations.forEach(r => {
+                        const li = document.createElement('li');
+                        li.textContent = r;
+                        recsList.appendChild(li);
+                    });
+                } else {
+                    recsList.innerHTML = '<li>Utilize local water conservation schemas.</li><li>Monitor incoming weather patterns closely over the next 14 days.</li>';
+                }
+
+                // Scroll down
+                document.getElementById('resultsPanel').scrollIntoView({ behavior: 'smooth' });
+            } else {
+                alert(result.error || 'Server Error Processing Intelligence Request');
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Network Error");
+        } finally {
+            submitBtn.textContent = 'Generate Intelligence Report';
+            submitBtn.disabled = false;
+        }
+    }
+</script>
+{% endblock %}

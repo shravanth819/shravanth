@@ -162,128 +162,127 @@ class UserAuthenticator:
         return True, "Username is valid"
 
 
+
 class UserDatabase:
-    """In-memory user database (replace with real database in production)"""
-    
-    def __init__(self):
-        """Initialize empty user storage"""
-        self.users = {}  # {user_id: user_data}
-        self.usernames = {}  # {username: user_id} - for quick lookup
-        self.emails = {}  # {email: user_id} - for quick lookup
-        self.next_id = 1
-    
-    def create_user(self, username: str, email: str, password_hash: str, 
-                   role: str = 'farmer', location: str = '', crop_type: str = '') -> Dict:
-        """
-        Create new user
-        
-        Args:
-            username: Unique username
-            email: User email
-            password_hash: Hashed password
-            role: User role
-            location: Default location (optional)
-            crop_type: Default crop type (optional)
-            
-        Returns:
-            User object
-        """
-        # Check if username already exists
-        if username in self.usernames:
-            raise ValueError("Username already exists")
-        
-        # Check if email already exists
-        if email in self.emails:
-            raise ValueError("Email already registered")
-        
-        user_id = f"user_{self.next_id}"
-        self.next_id += 1
-        
-        user = {
-            'user_id': user_id,
-            'username': username,
-            'email': email,
-            'password_hash': password_hash,
-            'role': role,
-            'location': location,
-            'crop_type': crop_type,
-            'created_at': datetime.now().isoformat(),
-            'last_login': None,
-            'is_active': True,
+    """SQLAlchemy persistent database wrapper for auth routes"""
+
+    def _to_dict(self, user):
+        return {
+            'user_id': str(user.id),
+            'username': user.username,
+            'email': user.email,
+            'password_hash': user.password_hash,
+            'role': user.role,
+            'location': user.location,
+            'crop_type': user.default_crop_type,
+            'created_at': user.created_at.isoformat() if user.created_at else None,
+            'is_active': user.is_active,
             'preferences': {
-                'language': 'en',
-                'notifications_email': True,
-                'notifications_sms': False,
-                'theme': 'dark'
+                'language': user.preferred_language,
+                'notifications_email': user.email_notifications,
+                'theme': user.theme_preference
             }
         }
-        
-        self.users[user_id] = user
-        self.usernames[username] = user_id
-        self.emails[email] = user_id
-        
-        return user
+
+    def create_user(self, username: str, email: str, password_hash: str, 
+                   role: str = 'farmer', location: str = '', crop_type: str = '') -> Dict:
+        from database.models import User
+        from database.db import db
+        if User.query.filter_by(username=username).first():
+            raise ValueError("Username already exists")
+        if User.query.filter_by(email=email).first():
+            raise ValueError("Email already registered")
+        user = User(
+            username=username,
+            email=email,
+            password_hash=password_hash,
+            role=role,
+            location=location,
+            default_crop_type=crop_type
+        )
+        db.session.add(user)
+        db.session.commit()
+        return self._to_dict(user)
     
     def get_user_by_username(self, username: str) -> Optional[Dict]:
-        """Get user by username"""
-        user_id = self.usernames.get(username)
-        return self.users.get(user_id) if user_id else None
+        from database.models import User
+        user = User.query.filter_by(username=username).first()
+        return self._to_dict(user) if user else None
     
     def get_user_by_email(self, email: str) -> Optional[Dict]:
-        """Get user by email"""
-        user_id = self.emails.get(email)
-        return self.users.get(user_id) if user_id else None
+        from database.models import User
+        user = User.query.filter_by(email=email).first()
+        return self._to_dict(user) if user else None
     
     def get_user_by_id(self, user_id: str) -> Optional[Dict]:
-        """Get user by user_id"""
-        return self.users.get(user_id)
+        from database.models import User
+        try:
+            uid = int(user_id) if str(user_id).isdigit() else int(str(user_id).replace('user_', ''))
+            user = User.query.get(uid)
+            return self._to_dict(user) if user else None
+        except:
+            return None
     
     def update_user(self, user_id: str, **kwargs) -> Optional[Dict]:
-        """Update user information"""
-        if user_id not in self.users:
+        from database.models import User
+        from database.db import db
+        try:
+            uid = int(user_id) if str(user_id).isdigit() else int(str(user_id).replace('user_', ''))
+            user = User.query.get(uid)
+            if not user:
+                return None
+            protected_fields = ['id', 'password_hash', 'created_at', 'username', 'email']
+            for key, value in kwargs.items():
+                if key not in protected_fields and hasattr(user, key):
+                    setattr(user, key, value)
+                elif key == 'crop_type':
+                    user.default_crop_type = value
+            db.session.commit()
+            return self._to_dict(user)
+        except:
             return None
-        
-        user = self.users[user_id]
-        
-        # Prevent certain fields from being updated
-        protected_fields = ['user_id', 'password_hash', 'created_at', 'username', 'email']
-        
-        for key, value in kwargs.items():
-            if key not in protected_fields:
-                user[key] = value
-        
-        return user
     
     def update_last_login(self, user_id: str) -> bool:
-        """Update last login timestamp"""
-        if user_id in self.users:
-            self.users[user_id]['last_login'] = datetime.now().isoformat()
-            return True
-        return False
+        from database.models import User
+        from database.models import LoginHistory
+        from database.db import db
+        try:
+            uid = int(user_id) if str(user_id).isdigit() else int(str(user_id).replace('user_', ''))
+            user = User.query.get(uid)
+            if user:
+                history = LoginHistory(user_id=uid)
+                db.session.add(history)
+                db.session.commit()
+                return True
+            return False
+        except:
+            return False
     
     def change_password(self, user_id: str, old_password_hash: str, 
                        new_password_hash: str) -> bool:
-        """Change user password"""
-        if user_id not in self.users:
+        from database.models import User
+        from database.db import db
+        try:
+            uid = int(user_id) if str(user_id).isdigit() else int(str(user_id).replace('user_', ''))
+            user = User.query.get(uid)
+            if not user:
+                return False
+            if not UserAuthenticator.verify_password(old_password_hash, user.password_hash):
+                return False
+            user.password_hash = new_password_hash
+            db.session.commit()
+            return True
+        except:
             return False
-        
-        user = self.users[user_id]
-        
-        # Verify old password
-        if not UserAuthenticator.verify_password(old_password_hash, user['password_hash']):
-            return False
-        
-        # Update password
-        user['password_hash'] = new_password_hash
-        return True
     
     def get_all_users(self) -> list:
-        """Get all users (for admin panel)"""
-        return list(self.users.values())
+        from database.models import User
+        return [self._to_dict(u) for u in User.query.all()]
     
     def get_users_by_role(self, role: str) -> list:
-        """Get all users with specific role"""
-        return [u for u in self.users.values() if u['role'] == role]
+        from database.models import User
+        return [self._to_dict(u) for u in User.query.filter_by(role=role).all()]
+
 
 
 # ============================================================================
